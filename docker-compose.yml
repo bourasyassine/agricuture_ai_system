@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: agri_db
+    environment:
+      POSTGRES_DB: agriculture_db
+      POSTGRES_USER: agriculture
+      POSTGRES_PASSWORD: soasoa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: .
+    container_name: agri_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DB_NAME: agriculture_db
+      DB_USER: agriculture
+      DB_PASSWORD: soasoa
+      DB_HOST: db
+      DB_PORT: 5432
+
+  frontend:
+    build: ./agriculture-frontend
+    container_name: agri_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+
+volumes:
+  postgres_data:
+
+

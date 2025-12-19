@@ -50,17 +50,27 @@ class SensorReading(models.Model):
 # ------------- ANOMALY EVENT -------------
 class AnomalyEvent(models.Model):
     reading = models.ForeignKey(SensorReading, on_delete=models.CASCADE, related_name="anomalies")
+    plot = models.ForeignKey(FieldPlot, on_delete=models.CASCADE, related_name="anomaly_events", null=True, blank=True)
     anomaly_type = models.CharField(max_length=100)
     severity = models.CharField(max_length=20)
-    detected_at = models.DateTimeField(auto_now_add=True)
+    message = models.TextField(blank=True, default="")
+    recommendation = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["reading"], name="unique_anomaly_per_reading"),
+        ]
 
     def __str__(self):
-        return f"{self.anomaly_type} ({self.severity})"
+        plot_name = getattr(self.plot, "name", None) or getattr(self.reading.plot, "name", "Unknown plot")
+        return f"{plot_name} - {self.anomaly_type} ({self.severity})"
 
 
 # ------------- AGENT RECOMMENDATION -------------
 class AgentRecommendation(models.Model):
-    anomaly = models.OneToOneField(AnomalyEvent, on_delete=models.CASCADE, related_name="recommendation")
+    anomaly = models.OneToOneField(AnomalyEvent, on_delete=models.CASCADE, related_name="agent_recommendation")
     recommended_action = models.TextField()
     explanation_text = models.TextField()
     generated_at = models.DateTimeField(auto_now_add=True)
